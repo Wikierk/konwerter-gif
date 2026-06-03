@@ -1,122 +1,93 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from "react";
+import ActionSection from "./components/ActionSection";
+import FileUploader from "./components/FileUploader";
+import Header from "./components/Header";
+import PreviewSection from "./components/PreviewSection";
+import SettingsSection from "./components/SettingsSection";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  // Stany
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [startTime, setStartTime] = useState<string>("00:00:00");
+  const [endTime, setEndTime] = useState<string>("00:00:05");
+  const [fps, setFps] = useState<string>("15");
+  const [resolution, setResolution] = useState<string>("Oryginalna");
+  const [isConverting, setIsConverting] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+
+  // Czyszczenie pamięci po usunięciu komponentu
+  useEffect(() => {
+    return () => {
+      if (videoUrl) URL.revokeObjectURL(videoUrl);
+    };
+  }, [videoUrl]);
+
+  // Logika obsługi pliku
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    setVideoUrl(URL.createObjectURL(file));
+    setIsSuccess(false);
+    setProgress(0);
+  };
+
+  // Logika generowania (Symulacja pod FFmpeg)
+  const handleGenerate = () => {
+    if (!selectedFile) return;
+    setIsConverting(true);
+    setProgress(0);
+    setIsSuccess(false);
+
+    let currentProgress = 0;
+    const interval = setInterval(() => {
+      currentProgress += Math.floor(Math.random() * 15) + 5;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setProgress(100);
+        setTimeout(() => {
+          setIsConverting(false);
+          setIsSuccess(true);
+        }, 500);
+      } else {
+        setProgress(currentProgress);
+      }
+    }, 400);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-gray-50 text-gray-800 p-6 flex justify-center font-sans">
+      <div className="w-full max-w-3xl space-y-6">
+        <Header />
 
-      <div className="ticks"></div>
+        <FileUploader
+          selectedFile={selectedFile}
+          onFileSelect={handleFileSelect}
+        />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <PreviewSection
+          videoUrl={videoUrl}
+          startTime={startTime}
+          endTime={endTime}
+          onStartTimeChange={setStartTime}
+          onEndTimeChange={setEndTime}
+        />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <SettingsSection
+          fps={fps}
+          resolution={resolution}
+          onFpsChange={setFps}
+          onResolutionChange={setResolution}
+        />
+
+        <ActionSection
+          isConverting={isConverting}
+          progress={progress}
+          isSuccess={isSuccess}
+          canGenerate={selectedFile !== null}
+          onGenerate={handleGenerate}
+        />
+      </div>
+    </div>
+  );
 }
-
-export default App
